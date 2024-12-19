@@ -148,7 +148,7 @@ class Snippet:
                 end_datetime = start_datetime + timedelta(seconds=duration)
 
                 # Cache and return the end time in the same format as the start time
-                self._end_time = end_datetime.strftime("%Y%m%d%H%M%S")
+                self._end_time = end_datetime.strftime("%Y%m%d%H%M%S%f")[:-3]
                 return self._end_time
 
             except Exception as e:

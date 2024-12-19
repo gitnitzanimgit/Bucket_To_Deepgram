@@ -2,18 +2,18 @@ import os
 from deepgram import DeepgramClient, PrerecordedOptions
 from pydub import AudioSegment
 from dotenv import load_dotenv
-from models import User, Snippet
+from models import User, Snippet, MasterTranscript
 from services import Helper, S3Service
 import asyncio
 import aiofiles
+
 
 # Directory of the running script
 current_dir = os.path.dirname(__file__)
 
 # Set paths for ffmpeg and ffprobe
-AudioSegment.converter = "/opt/homebrew/bin/ffmpeg"
-AudioSegment.ffprobe = "/opt/homebrew/bin/ffprobe"
-AudioSegment.converter = "/opt/homebrew/bin/ffmpeg"
+AudioSegment.converter = os.getenv("CONVERTER_PATH")
+AudioSegment.ffprobe = os.getenv("FFPROBE_PATH")
 
 # Load environment variables
 load_dotenv()
@@ -24,7 +24,7 @@ grouped_files_by_room = Helper.group_ts_files_by_room(object_keys)
 specific_room_ts = grouped_files_by_room[os.getenv("ARBITRARY_ROOM")]
 
 # Initialize users and queue
-users = {"1000005685": User("1000005685")}
+users = {"1000005685": User("1000005685"), "1000005686": User("1000005686")}
 queue = []
 
 #Creating a queue, last file is oldest
@@ -33,6 +33,8 @@ while specific_room_ts:
     file = Snippet(file)
     queue.append(file)
 
+#Initialize a MasterTranscript
+master_transcript = MasterTranscript()
 
 # Initialize Deepgram client
 deepgram = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
@@ -62,10 +64,14 @@ async def process_snippet(curr_snippet):
                 "end_time": str(await curr_snippet.end_time()),
                 "text": str(curr_snippet.transcription),
             }
-            User.add_json_line(users, curr_snippet.uid, json_line)
+            User.add_json_line(users, curr_snippet.uid, json_line, master_transcript)
 
     except Exception as e:
         print(f"Error processing snippet: {curr_snippet}. Error: {e}")
+
+
+# manage_snippet_process
+
 
 
 async def process_queue(queue):
@@ -80,6 +86,8 @@ async def main():
     await process_queue(queue)
     # Print user data
     print(users["1000005685"])
+    print(users["1000005686"])
+    print(master_transcript)
 
 # Execute the main function
 if __name__ == "__main__":

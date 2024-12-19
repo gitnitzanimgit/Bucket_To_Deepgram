@@ -1,6 +1,7 @@
 import boto3
 from botocore.exceptions import NoCredentialsError
 
+
 class S3Service:
     @staticmethod
     def list_s3_objects(bucket_name):
